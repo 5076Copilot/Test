@@ -13,6 +13,8 @@ type Registry struct {
 	NotificationsFailed   atomic.Int64
 	SessionsActive        atomic.Int64
 	SubscriptionsActive   atomic.Int64
+	MbsServicesActive     atomic.Int64
+	MbsSessionsActive     atomic.Int64
 }
 
 func NewRegistry() *Registry { return &Registry{} }
@@ -32,6 +34,10 @@ func (r *Registry) Handler() http.Handler {
 		fmt.Fprintf(w, "# TYPE mbsmf_sessions_active gauge\nmbsmf_sessions_active %d\n", r.SessionsActive.Load())
 		fmt.Fprintf(w, "# HELP mbsmf_subscriptions_active Active subscriptions\n")
 		fmt.Fprintf(w, "# TYPE mbsmf_subscriptions_active gauge\nmbsmf_subscriptions_active %d\n", r.SubscriptionsActive.Load())
+		fmt.Fprintf(w, "# HELP mbsmf_mbs_services_active Active MBS services\n")
+		fmt.Fprintf(w, "# TYPE mbsmf_mbs_services_active gauge\nmbsmf_mbs_services_active %d\n", r.MbsServicesActive.Load())
+		fmt.Fprintf(w, "# HELP mbsmf_mbs_sessions_active Active MBS sessions\n")
+		fmt.Fprintf(w, "# TYPE mbsmf_mbs_sessions_active gauge\nmbsmf_mbs_sessions_active %d\n", r.MbsSessionsActive.Load())
 	})
 }
 

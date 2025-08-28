@@ -59,3 +59,51 @@ func NewID() string {
 	return hex.EncodeToString(buf)
 }
 
+// ---- 3GPP Rel-18 MBS simplified domain ----
+
+type DeliveryMethod string
+
+const (
+	DeliveryMethodBroadcast DeliveryMethod = "BROADCAST"
+	DeliveryMethodMulticast DeliveryMethod = "MULTICAST"
+)
+
+type MbsService struct {
+	ID             string         `json:"id"`
+	ExternalID     string         `json:"externalId"`
+	DeliveryMethod DeliveryMethod `json:"deliveryMethod"`
+	ServiceAreas   []string       `json:"serviceAreas"`
+	QoSProfile     string         `json:"qosProfile"`
+	CreatedAt      time.Time      `json:"createdAt"`
+}
+
+type CreateMbsServiceRequest struct {
+	ExternalID     string         `json:"externalId"`
+	DeliveryMethod DeliveryMethod `json:"deliveryMethod"`
+	ServiceAreas   []string       `json:"serviceAreas"`
+	QoSProfile     string         `json:"qosProfile"`
+}
+
+type MbsSessionState string
+
+const (
+	MbsSessionStateActive   MbsSessionState = "ACTIVE"
+	MbsSessionStateInactive MbsSessionState = "INACTIVE"
+)
+
+type MbsSession struct {
+	ID             string          `json:"id"`
+	MbsServiceID   string          `json:"mbsServiceId"`
+	DeliveryMethod DeliveryMethod  `json:"deliveryMethod"`
+	SessionAreas   []string        `json:"sessionAreas"`
+	State          MbsSessionState `json:"state"`
+	CreatedAt      time.Time       `json:"createdAt"`
+	ModifiedAt     time.Time       `json:"modifiedAt"`
+}
+
+type CreateMbsSessionRequest struct {
+	MbsServiceID   string         `json:"mbsServiceId"`
+	DeliveryMethod DeliveryMethod `json:"deliveryMethod"`
+	SessionAreas   []string       `json:"sessionAreas"`
+}
+

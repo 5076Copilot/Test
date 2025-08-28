@@ -113,6 +113,69 @@ func (s *MBService) CreatePolicy(req models.CreatePolicyRequest) (models.Policy,
 func (s *MBService) DeletePolicy(id string) error { return s.store.DeletePolicy(id) }
 func (s *MBService) ListPolicies() []models.Policy { return s.store.ListPolicies() }
 
+// MBS Services API
+func (s *MBService) CreateMbsService(req models.CreateMbsServiceRequest) (models.MbsService, error) {
+    if req.ExternalID == "" || len(req.ServiceAreas) == 0 {
+        return models.MbsService{}, ErrInvalid
+    }
+    if req.DeliveryMethod != models.DeliveryMethodBroadcast && req.DeliveryMethod != models.DeliveryMethodMulticast {
+        return models.MbsService{}, ErrInvalid
+    }
+    m := models.MbsService{
+        ID:             models.NewID(),
+        ExternalID:     req.ExternalID,
+        DeliveryMethod: req.DeliveryMethod,
+        ServiceAreas:   append([]string(nil), req.ServiceAreas...),
+        QoSProfile:     req.QoSProfile,
+    }
+    m = s.store.CreateMbsService(m)
+    s.metrics.MbsServicesActive.Add(1)
+    return m, nil
+}
+
+func (s *MBService) DeleteMbsService(id string) error {
+    if err := s.store.DeleteMbsService(id); err != nil {
+        return err
+    }
+    s.metrics.MbsServicesActive.Add(-1)
+    return nil
+}
+
+func (s *MBService) ListMbsServices() []models.MbsService { return s.store.ListMbsServices() }
+
+// MBS Sessions API
+func (s *MBService) CreateMbsSession(req models.CreateMbsSessionRequest) (models.MbsSession, error) {
+    if req.MbsServiceID == "" || len(req.SessionAreas) == 0 {
+        return models.MbsSession{}, ErrInvalid
+    }
+    if req.DeliveryMethod != models.DeliveryMethodBroadcast && req.DeliveryMethod != models.DeliveryMethodMulticast {
+        return models.MbsSession{}, ErrInvalid
+    }
+    if _, err := s.store.GetMbsService(req.MbsServiceID); err != nil {
+        return models.MbsSession{}, err
+    }
+    ms := models.MbsSession{
+        ID:             models.NewID(),
+        MbsServiceID:   req.MbsServiceID,
+        DeliveryMethod: req.DeliveryMethod,
+        SessionAreas:   append([]string(nil), req.SessionAreas...),
+        State:          models.MbsSessionStateActive,
+    }
+    ms = s.store.CreateMbsSession(ms)
+    s.metrics.MbsSessionsActive.Add(1)
+    return ms, nil
+}
+
+func (s *MBService) DeleteMbsSession(id string) error {
+    if err := s.store.DeleteMbsSession(id); err != nil {
+        return err
+    }
+    s.metrics.MbsSessionsActive.Add(-1)
+    return nil
+}
+
+func (s *MBService) ListMbsSessions() []models.MbsSession { return s.store.ListMbsSessions() }
+
 func contains(list []string, v string) bool {
 	for _, x := range list {
 		if x == v {

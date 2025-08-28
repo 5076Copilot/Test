@@ -58,3 +58,32 @@ func TestSessionLifecycle(t *testing.T) {
 	}
 }
 
+func TestMbsServiceAndSessionLifecycle(t *testing.T) {
+    h := newTestRouter()
+    // create MBS service
+    bodySvc, _ := json.Marshal(map[string]any{"externalId": "svc-1", "deliveryMethod": "BROADCAST", "serviceAreas": []string{"A"}})
+    req := httptest.NewRequest(http.MethodPost, "/nmbsf/v1/mbs-services", bytes.NewReader(bodySvc))
+    req.Header.Set("Content-Type", "application/json")
+    resp := httptest.NewRecorder()
+    h.ServeHTTP(resp, req)
+    if resp.Code != http.StatusCreated {
+        t.Fatalf("expected 201, got %d", resp.Code)
+    }
+    var created map[string]any
+    _ = json.Unmarshal(resp.Body.Bytes(), &created)
+    id, _ := created["id"].(string)
+    if id == "" {
+        t.Fatalf("expected id in service response")
+    }
+
+    // create MBS session for this service
+    bodySess, _ := json.Marshal(map[string]any{"mbsServiceId": id, "deliveryMethod": "BROADCAST", "sessionAreas": []string{"A"}})
+    req2 := httptest.NewRequest(http.MethodPost, "/nmbsf/v1/mbs-sessions", bytes.NewReader(bodySess))
+    req2.Header.Set("Content-Type", "application/json")
+    resp2 := httptest.NewRecorder()
+    h.ServeHTTP(resp2, req2)
+    if resp2.Code != http.StatusCreated {
+        t.Fatalf("expected 201, got %d", resp2.Code)
+    }
+}
+

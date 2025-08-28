@@ -17,6 +17,8 @@ type MemoryStore struct {
 	sessions      map[string]models.Session
 	subscriptions map[string]models.Subscription
 	policies      map[string]models.Policy
+	mbsServices   map[string]models.MbsService
+	mbsSessions   map[string]models.MbsSession
 }
 
 func NewMemoryStore() *MemoryStore {
@@ -24,6 +26,8 @@ func NewMemoryStore() *MemoryStore {
 		sessions:      make(map[string]models.Session),
 		subscriptions: make(map[string]models.Subscription),
 		policies:      make(map[string]models.Policy),
+		mbsServices:   make(map[string]models.MbsService),
+		mbsSessions:   make(map[string]models.MbsSession),
 	}
 }
 
@@ -137,6 +141,83 @@ func (s *MemoryStore) ListPolicies() []models.Policy {
 	defer s.mu.RUnlock()
 	res := make([]models.Policy, 0, len(s.policies))
 	for _, v := range s.policies {
+		res = append(res, v)
+	}
+	return res
+}
+
+// MBS Services
+func (s *MemoryStore) CreateMbsService(m models.MbsService) models.MbsService {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	m.CreatedAt = time.Now().UTC()
+	s.mbsServices[m.ID] = m
+	return m
+}
+
+func (s *MemoryStore) GetMbsService(id string) (models.MbsService, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if v, ok := s.mbsServices[id]; ok {
+		return v, nil
+	}
+	return models.MbsService{}, ErrNotFound
+}
+
+func (s *MemoryStore) DeleteMbsService(id string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if _, ok := s.mbsServices[id]; !ok {
+		return ErrNotFound
+	}
+	delete(s.mbsServices, id)
+	return nil
+}
+
+func (s *MemoryStore) ListMbsServices() []models.MbsService {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	res := make([]models.MbsService, 0, len(s.mbsServices))
+	for _, v := range s.mbsServices {
+		res = append(res, v)
+	}
+	return res
+}
+
+// MBS Sessions
+func (s *MemoryStore) CreateMbsSession(m models.MbsSession) models.MbsSession {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	m.CreatedAt = time.Now().UTC()
+	m.ModifiedAt = m.CreatedAt
+	s.mbsSessions[m.ID] = m
+	return m
+}
+
+func (s *MemoryStore) GetMbsSession(id string) (models.MbsSession, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if v, ok := s.mbsSessions[id]; ok {
+		return v, nil
+	}
+	return models.MbsSession{}, ErrNotFound
+}
+
+func (s *MemoryStore) DeleteMbsSession(id string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if _, ok := s.mbsSessions[id]; !ok {
+		return ErrNotFound
+	}
+	delete(s.mbsSessions, id)
+	return nil
+}
+
+func (s *MemoryStore) ListMbsSessions() []models.MbsSession {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	res := make([]models.MbsSession, 0, len(s.mbsSessions))
+	for _, v := range s.mbsSessions {
 		res = append(res, v)
 	}
 	return res

@@ -34,6 +34,12 @@ func NewRouter(svc *service.MBService, logger *log.Logger, metrics *metrics.Regi
 	mux.HandleFunc("/nmbsf/v1/policies", r.policies)
 	mux.HandleFunc("/nmbsf/v1/policies/", r.policyByID)
 
+	// Rel-18 MBS resources
+	mux.HandleFunc("/nmbsf/v1/mbs-services", r.mbsServices)
+	mux.HandleFunc("/nmbsf/v1/mbs-services/", r.mbsServiceByID)
+	mux.HandleFunc("/nmbsf/v1/mbs-sessions", r.mbsSessions)
+	mux.HandleFunc("/nmbsf/v1/mbs-sessions/", r.mbsSessionByID)
+
 	return withCommon(r.logger, r.metrics, mux)
 }
 
@@ -173,6 +179,84 @@ func (r *router) policyByID(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// MBS Services
+func (r *router) mbsServices(w http.ResponseWriter, req *http.Request) {
+    switch req.Method {
+    case http.MethodPost:
+        var body models.CreateMbsServiceRequest
+        if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
+            writeErr(r.logger, r.metrics, w, http.StatusBadRequest, err)
+            return
+        }
+        res, err := r.svc.CreateMbsService(body)
+        if err != nil {
+            writeErr(r.logger, r.metrics, w, http.StatusBadRequest, err)
+            return
+        }
+        writeJSON(w, http.StatusCreated, res)
+    case http.MethodGet:
+        writeJSON(w, http.StatusOK, r.svc.ListMbsServices())
+    default:
+        w.WriteHeader(http.StatusMethodNotAllowed)
+    }
+}
+
+func (r *router) mbsServiceByID(w http.ResponseWriter, req *http.Request) {
+    if req.Method != http.MethodDelete {
+        w.WriteHeader(http.StatusMethodNotAllowed)
+        return
+    }
+    id := req.URL.Path[len("/nmbsf/v1/mbs-services/"):]
+    if id == "" {
+        w.WriteHeader(http.StatusBadRequest)
+        return
+    }
+    if err := r.svc.DeleteMbsService(id); err != nil {
+        writeErr(r.logger, r.metrics, w, http.StatusNotFound, err)
+        return
+    }
+    w.WriteHeader(http.StatusNoContent)
+}
+
+// MBS Sessions
+func (r *router) mbsSessions(w http.ResponseWriter, req *http.Request) {
+    switch req.Method {
+    case http.MethodPost:
+        var body models.CreateMbsSessionRequest
+        if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
+            writeErr(r.logger, r.metrics, w, http.StatusBadRequest, err)
+            return
+        }
+        res, err := r.svc.CreateMbsSession(body)
+        if err != nil {
+            writeErr(r.logger, r.metrics, w, http.StatusBadRequest, err)
+            return
+        }
+        writeJSON(w, http.StatusCreated, res)
+    case http.MethodGet:
+        writeJSON(w, http.StatusOK, r.svc.ListMbsSessions())
+    default:
+        w.WriteHeader(http.StatusMethodNotAllowed)
+    }
+}
+
+func (r *router) mbsSessionByID(w http.ResponseWriter, req *http.Request) {
+    if req.Method != http.MethodDelete {
+        w.WriteHeader(http.StatusMethodNotAllowed)
+        return
+    }
+    id := req.URL.Path[len("/nmbsf/v1/mbs-sessions/"):]
+    if id == "" {
+        w.WriteHeader(http.StatusBadRequest)
+        return
+    }
+    if err := r.svc.DeleteMbsSession(id); err != nil {
+        writeErr(r.logger, r.metrics, w, http.StatusNotFound, err)
+        return
+    }
+    w.WriteHeader(http.StatusNoContent)
 }
 
 func writeErr(logger *log.Logger, m *metrics.Registry, w http.ResponseWriter, code int, err error) {
